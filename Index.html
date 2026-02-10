@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EvergreenHealth Urgent Care – Wait Times</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .error {
+      color: #b00020;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>EvergreenHealth Urgent Care – API Test</h1>
+
+<p>This page calls <code>/api/evergreen</code> and displays the raw response.</p>
+
+<pre id="output">Loading…</pre>
+
+<script>
+async function loadData() {
+  try {
+    const res = await fetch("/api/evergreen");
+    const data = await res.json();
+    document.getElementById("output").textContent =
+      JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById("output").innerHTML =
+      '<span class="error">' + err.message + '</span>';
+  }
+}
+
+loadData();
+setInterval(loadData, 60000); // refresh every 60 seconds
+</script>
+
+</body>
+</html>
