@@ -16,11 +16,11 @@ export default async function handler(req, res) {
     const epicUrl =
       "https://mychart.et1270.epichosted.com/MyChart/Scheduling/OnMyWay/GetOnMyWayDepartmentData";
 
-    // ✅ Use the richer payload (with coordinates)
+    // 👇 Use the exact rfvId from your working browser request
     const rfvId =
       "WP-24rQmk-2FGC-2BmW8pnPncK1Fx9g-3D-3D-24r7f1gf3-2Fdj-2BI1LwPm5KN8-2FY2adj3CGabNn3sZBuaMJ0-3D";
 
-    // This must be the *decoded* JSON string (not %7B... form)
+    // 👇 Coordinates from your successful browser request
     const searchCoordinatesObj = {
       ModelId: 7,
       _propertyListeners: [],
@@ -45,27 +45,40 @@ export default async function handler(req, res) {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "__RequestVerificationToken": EPIC_CSRF_TOKEN,
         "Cookie": EPIC_COOKIE,
-        "Accept": "application/json, text/plain, */*"
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://mychart.et1270.epichosted.com",
+        "Referer":
+          "https://mychart.et1270.epichosted.com/mychart/scheduling/onmyway/widget?selDepId=101010103&selRfvId=11",
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": "Mozilla/5.0"
       },
       body: form.toString(),
       redirect: "manual"
     });
 
-    const contentType = response.headers.get("content-type") || "";
     const status = response.status;
+    const contentType = response.headers.get("content-type") || "";
+    const location = response.headers.get("location") || null;
 
     if (!contentType.includes("application/json")) {
       const text = await response.text();
+
       return res.status(502).json({
         error: "Epic did not return JSON",
         epicStatus: status,
+        location,
         contentType,
-        preview: text.substring(0, 300)
+        preview: text.substring(0, 500)
       });
     }
 
     const data = await response.json();
-    return res.status(200).json({ epicStatus: status, data });
+
+    return res.status(200).json({
+      epicStatus: status,
+      data
+    });
 
   } catch (err) {
     return res.status(500).json({
