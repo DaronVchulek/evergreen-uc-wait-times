@@ -16,27 +16,44 @@ export default async function handler(req, res) {
     const epicUrl =
       "https://mychart.et1270.epichosted.com/MyChart/Scheduling/OnMyWay/GetOnMyWayDepartmentData";
 
+    // ✅ Use the richer payload (with coordinates)
+    const rfvId =
+      "WP-24rQmk-2FGC-2BmW8pnPncK1Fx9g-3D-3D-24r7f1gf3-2Fdj-2BI1LwPm5KN8-2FY2adj3CGabNn3sZBuaMJ0-3D";
+
+    // This must be the *decoded* JSON string (not %7B... form)
+    const searchCoordinatesObj = {
+      ModelId: 7,
+      _propertyListeners: [],
+      IsSpecificLocation: true,
+      HasValue: true,
+      Coordinates: {
+        ModelId: 388,
+        _propertyListeners: [],
+        Latitude: 47.68245145023804,
+        Longitude: -122.1251602869021
+      }
+    };
+
+    const form = new URLSearchParams();
+    form.set("rfvId", rfvId);
+    form.set("displayGroupIds", "");
+    form.set("searchCoordinates", JSON.stringify(searchCoordinatesObj));
+
     const response = await fetch(epicUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "__RequestVerificationToken": EPIC_CSRF_TOKEN,
         "Cookie": EPIC_COOKIE,
-        "User-Agent": "Mozilla/5.0",
         "Accept": "application/json, text/plain, */*"
       },
-      body: JSON.stringify({
-        rfvId: "11",
-        displayGroupIds: "",
-        searchCoordinates: null
-      }),
-      redirect: "manual" // IMPORTANT: exposes Epic redirects
+      body: form.toString(),
+      redirect: "manual"
     });
 
     const contentType = response.headers.get("content-type") || "";
     const status = response.status;
 
-    // If Epic redirects (302) or sends HTML, expose it clearly
     if (!contentType.includes("application/json")) {
       const text = await response.text();
       return res.status(502).json({
@@ -48,11 +65,7 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-
-    return res.status(200).json({
-      epicStatus: status,
-      data
-    });
+    return res.status(200).json({ epicStatus: status, data });
 
   } catch (err) {
     return res.status(500).json({
